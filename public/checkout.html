@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assinar — R$ 8,00 por semana</title>
+
+  <!--
+    Biblioteca de tokenização do Efí: gera o payment_token no navegador,
+    usando só o Identificador de Conta (não precisa colar script do painel).
+    Se algum dia o global não carregar, confira a URL atual no README:
+    https://github.com/efipay/js-payment-token-efi
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/payment-token-efi"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #f4f3f1;
+      --ink: #17161b;
+      --muted: #6f6e76;
+      --faint: #9b9aa1;
+      --line: #e8e6e2;
+      --surface: #ffffff;
+      --accent: #4f46e5;
+      --accent-press: #4338ca;
+      --hero: #17161b;
+      --hero-muted: #a3a2aa;
+      --ok-bg: #e7f6ee; --ok-ink: #0c7a4d;
+      --err-bg: #fdeceb; --err-ink: #b42318;
+      --shadow: 0 1px 2px rgba(20,18,30,.05), 0 10px 30px rgba(20,18,30,.06);
+      --r: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased; line-height: 1.45;
+      padding: 24px 16px 48px;
+    }
+    .wrap { max-width: 430px; margin: 0 auto; }
+
+    /* Cabeçalho de marca */
+    .brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .brand .id { display: flex; align-items: center; gap: 10px; }
+    .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--ink); color: #fff;
+      display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+    .brand .name { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+    .brand .lock { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+
+    /* Hero do plano (escuro) */
+    .hero { background: var(--hero); color: #fff; border-radius: var(--r); padding: 22px; box-shadow: var(--shadow); }
+    .hero .eyebrow { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+      color: #cfcde6; background: rgba(124,114,235,.22); padding: 4px 10px; border-radius: 999px; }
+    .hero .price { margin-top: 14px; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+    .hero .price span { font-size: 15px; font-weight: 500; color: var(--hero-muted); letter-spacing: 0; }
+    .hero .desc { margin-top: 10px; font-size: 13px; color: var(--hero-muted); }
+    .hero .sched { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); }
+    .hero .chip { flex: 1; background: rgba(255,255,255,.06); border-radius: 10px; padding: 8px 10px; }
+    .hero .chip .w { font-size: 10.5px; color: var(--hero-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .hero .chip .v { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+    /* Cartão do formulário */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; margin-top: 14px; box-shadow: var(--shadow); }
+    fieldset { border: 0; padding: 0; margin: 0; }
+    legend { font-size: 11.5px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; padding: 0; }
+    label { display: block; font-size: 12.5px; color: var(--muted); margin: 13px 0 6px; font-weight: 500; }
+    fieldset > .field:first-of-type label { margin-top: 0; }
+    .field { position: relative; }
+    input {
+      width: 100%; padding: 12px 13px; font-size: 15px; font-family: inherit; color: var(--ink);
+      background: #fcfcfb; border: 1px solid var(--line); border-radius: 11px;
+      transition: border-color .12s, box-shadow .12s, background .12s;
+    }
+    input::placeholder { color: #bdbcc3; }
+    input:hover { border-color: #d8d6d1; }
+    input:focus { outline: none; background: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.13); }
+    .row { display: flex; gap: 10px; } .row > .field { flex: 1; }
+    .sep { height: 1px; background: var(--line); margin: 20px 0; }
+
+    .secure { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 16px; }
+    .secure svg { flex: none; color: var(--ok-ink); }
+
+    button.primary {
+      width: 100%; margin-top: 14px; padding: 15px; border: 0; border-radius: 12px;
+      background: var(--accent); color: #fff; font: 600 15.5px "Inter", sans-serif; cursor: pointer;
+      letter-spacing: -.01em; transition: background .14s, transform .05s, box-shadow .14s;
+      box-shadow: 0 6px 16px rgba(79,70,229,.26);
+    }
+    button.primary:hover { background: var(--accent-press); box-shadow: 0 8px 22px rgba(79,70,229,.32); }
+    button.primary:active { transform: translateY(1px); }
+    button.primary:disabled { opacity: .55; cursor: default; box-shadow: none; }
+
+    .brands { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--faint); }
+    .brands span { font-weight: 600; letter-spacing: .02em; }
+
+    #msg { margin-top: 12px; padding: 12px 14px; border-radius: 11px; font-size: 13px; white-space: pre-wrap; display: none; }
+    #msg.ok { background: var(--ok-bg); color: var(--ok-ink); }
+    #msg.err { background: var(--err-bg); color: var(--err-ink); }
+
+    h2 { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); margin: 30px 0 0; }
+    .sub { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 15px; margin-top: 11px; box-shadow: var(--shadow); }
+    .sub .top { display: flex; align-items: center; justify-content: space-between; }
+    .sub strong { font-size: 15px; font-weight: 600; }
+    .sub .meta { font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+    .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    .badge.ativa { background: var(--ok-bg); color: var(--ok-ink); }
+    .badge.inativa { background: #eef0f3; color: var(--muted); }
+    button.cancel { margin-top: 13px; width: 100%; padding: 10px; border: 1px solid var(--line); background: #fff; color: var(--err-ink);
+      border-radius: 10px; font: 500 13px "Inter", sans-serif; cursor: pointer; transition: background .12s, border-color .12s; }
+    button.cancel:hover { background: var(--err-bg); border-color: #f6d4d1; }
+    .empty { font-size: 13px; color: var(--muted); margin-top: 11px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Cabeçalho: troque "Sua Marca" e o monograma pelo nome do seu serviço -->
+    <header class="brand">
+      <div class="id">
+        <div class="mark">S</div>
+        <div class="name">Sua Marca</div>
+      </div>
+      <div class="lock">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Seguro
+      </div>
+    </header>
+
+    <!-- Hero do plano -->
+    <section class="hero">
+      <span class="eyebrow">Assinatura semanal</span>
+      <div class="price">R$ 8,00 <span>/ semana</span></div>
+      <div class="desc">Cobramos agora e depois automaticamente a cada 7 dias, até você cancelar.</div>
+      <div class="sched">
+        <div class="chip"><div class="w">Hoje</div><div class="v">R$ 8,00</div></div>
+        <div class="chip"><div class="w">Em 7 dias</div><div class="v">R$ 8,00</div></div>
+        <div class="chip"><div class="w">Em 14 dias</div><div class="v">R$ 8,00</div></div>
+      </div>
+    </section>
+
+    <!-- Formulário -->
+    <div class="card">
+      <fieldset>
+        <legend>Cartão</legend>
+        <div class="field"><label for="number">Número do cartão</label>
+          <input id="number" inputmode="numeric" autocomplete="cc-number" placeholder="4485 7856 7429 0087" /></div>
+        <div class="row">
+          <div class="field"><label for="mm">Mês</label><input id="mm" inputmode="numeric" autocomplete="cc-exp-month" placeholder="12" /></div>
+          <div class="field"><label for="yyyy">Ano</label><input id="yyyy" inputmode="numeric" autocomplete="cc-exp-year" placeholder="2030" /></div>
+          <div class="field"><label for="cvv">CVV</label><input id="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" /></div>
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset>
+        <legend>Seus dados</legend>
+        <div class="field"><label for="name">Nome completo</label><input id="name" autocomplete="name" placeholder="Maria Silva" /></div>
+        <div class="field"><label for="cpf">CPF</label><input id="cpf" inputmode="numeric" placeholder="000.000.000-00" /></div>
+        <div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="email" placeholder="maria@email.com" /></div>
+      </fieldset>
+
+      <div class="secure">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Pagamento seguro. Os dados do cartão não passam pelo nosso servidor.
+      </div>
+
+      <button class="primary" id="btnAssinar">Assinar por R$ 8,00/semana</button>
+      <div class="brands"><span>VISA</span><span>Mastercard</span><span>Elo</span><span>Amex</span><span>Hipercard</span></div>
+      <div id="msg"></div>
+    </div>
+
+    <h2>Suas assinaturas</h2>
+    <div id="lista"></div>
+  </div>
+
+  <script>
+    let CONFIG = { sandbox: true };
+    fetch("/config").then(r => r.json()).then(c => { CONFIG = c; }).catch(() => {});
+
+    const $ = id => document.getElementById(id);
+    const msg = $("msg");
+    function show(text, ok) { msg.style.display = "block"; msg.className = ok ? "ok" : "err"; msg.textContent = text; }
+
+    function detectarBandeira(n) {
+      n = n.replace(/\D/g, "");
+      if (/^4/.test(n)) return "visa";
+      if (/^(5[1-5]|2[2-7])/.test(n)) return "mastercard";
+      if (/^3[47]/.test(n)) return "amex";
+      if (/^(636368|438935|504175|451416|5067|4576|4011|506699)/.test(n)) return "elo";
+      if (/^(606282|3841)/.test(n)) return "hipercard";
+      return "visa";
+    }
+
+    async function tokenizar(dados) {
+      if (!window.EfiPay || !EfiPay.CreditCard) {
+        throw new Error("Biblioteca de tokenização do Efí não carregou. Verifique sua conexão / o bloqueador de scripts.");
+      }
+      const result = await EfiPay.CreditCard
+        .setAccount(CONFIG.payeeCode)
+        .setEnvironment(CONFIG.sandbox ? "sandbox" : "production")
+        .setCreditCardData({
+          brand: dados.brand,
+          number: dados.number,
+          cvv: dados.cvv,
+          expirationMonth: dados.mm,
+          expirationYear: dados.yyyy,
+          reuse: true,
+        })
+        .getPaymentToken();
+      const r = result?.data || result; // { payment_token, card_mask }
+      if (!r?.payment_token) throw new Error("Não foi possível gerar o token do cartão.");
+      return r;
+    }
+
+    $("btnAssinar").addEventListener("click", async () => {
+      $("btnAssinar").disabled = true;
+      show("Processando...", true);
+      try {
+        const number = $("number").value.replace(/\s/g, "");
+        const tok = await tokenizar({
+          brand: detectarBandeira(number), number, cvv: $("cvv").value,
+          mm: $("mm").value.padStart(2, "0"), yyyy: $("yyyy").value,
+        });
+
+        const payload = {
+          paymentToken: tok.payment_token, cardMask: tok.card_mask,
+          customer: { name: $("name").value, cpf: $("cpf").value.replace(/\D/g, ""),
+            email: $("email").value },
+        };
+
+        const r = await fetch("/assinar", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          const motivo = data.motivo ? `\nMotivo: ${data.motivo}` : "";
+          return show((data.erro || "Falha") + motivo, false);
+        }
+        show(`Assinatura criada. Primeira cobrança de R$ ${(data.primeiraCobranca.total/100).toFixed(2)} aprovada. Próxima: ${data.proximaCobranca}.`, true);
+        carregarLista();
+      } catch (e) {
+        show(e.message, false);
+      } finally {
+        $("btnAssinar").disabled = false;
+      }
+    });
+
+    async function carregarLista() {
+      const r = await fetch("/assinaturas");
+      const lista = await r.json();
+      const el = $("lista");
+      el.innerHTML = lista.length ? "" : "<p class='empty'>Você ainda não tem assinaturas.</p>";
+      for (const a of lista) {
+        const div = document.createElement("div");
+        div.className = "sub";
+        const badge = a.ativa ? "<span class='badge ativa'>ativa</span>" : "<span class='badge inativa'>cancelada</span>";
+        const prox = (a.proxima_cobranca || "").slice(0, 10);
+        div.innerHTML = `<div class="top"><strong>${a.nome}</strong> ${badge}</div>
+          <div class="meta">R$ ${(a.valor/100).toFixed(2)} a cada ${a.intervalo_dias} dias</div>
+          <div class="meta">${a.card_mask || ""} • próxima: ${prox}${a.tentativas ? " • falhas: " + a.tentativas : ""}</div>`;
+        if (a.ativa) {
+          const b = document.createElement("button");
+          b.className = "cancel";
+          b.textContent = "Cancelar assinatura";
+          b.onclick = () => cancelar(a.id, b);
+          div.appendChild(b);
+        }
+        el.appendChild(div);
+      }
+    }
+
+    async function cancelar(id, btn) {
+      if (!confirm("Cancelar esta assinatura? Não haverá mais cobranças.")) return;
+      btn.disabled = true; btn.textContent = "Cancelando...";
+      try {
+        const r = await fetch("/cancelar", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await r.json();
+        if (data.ok) { show("Assinatura cancelada. Não haverá novas cobranças.", true); carregarLista(); }
+        else show(data.erro || "Falha ao cancelar", false);
+      } catch (e) {
+        show("Erro ao cancelar: " + e.message, false);
+      }
+    }
+    carregarLista();
+  </script>
+</body>
+</html>
