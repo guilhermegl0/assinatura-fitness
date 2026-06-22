@@ -1,15 +1,12 @@
 # Blueprint do Render: cria banco + site + cron de uma vez.
-# Como usar: no painel do Render, New -> Blueprint -> selecione este repositorio.
-# As variaveis marcadas com sync:false voce preenche no painel (nao ficam no repo).
-#
-# OBS: nomes de plano (plan) e regiao (region) mudam de tempos em tempos no Render.
-# Se o blueprint for recusado por causa de um plano, ajuste para um nome valido
-# atual (veja a pagina de precos do Render). Mantenha web, cron e banco na MESMA
-# regiao para o banco ficar perto dos servicos.
+# Versao GRATUITA (para testes). Para producao, troque os planos:
+#   - databases.plan: basic-256mb (ou superior)
+#   - web/cron plan: starter (sem cold start)
+# Nomes de plano/regiao podem mudar no Render; ajuste se for recusado.
 
 databases:
   - name: efi-db
-    plan: basic-256mb        # ajuste se necessario; "free" expira apos um periodo
+    plan: free
     region: oregon
 
 envVarGroups:
@@ -22,14 +19,13 @@ envVarGroups:
       - key: EFI_PAYEE_CODE
         sync: false
       - key: EFI_SANDBOX
-        value: "true"        # troque para "false" quando for producao real
+        value: "true"
       - key: VALOR_SEMANAL
         value: "800"
       - key: INTERVALO_DIAS
         value: "7"
       - key: MAX_TENTATIVAS
         value: "3"
-      # E-mail (opcional). Sem isto, os avisos so vao para o log.
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -42,11 +38,10 @@ envVarGroups:
         sync: false
 
 services:
-  # Site + API
   - type: web
     name: efi-assinatura
     runtime: node
-    plan: starter            # pago, sem cold start (recomendado para producao)
+    plan: free
     region: oregon
     branch: main
     buildCommand: npm install
@@ -60,7 +55,6 @@ services:
           name: efi-db
           property: connectionString
 
-  # Agendador: cobra as assinaturas vencidas, 1x por dia (09:00 UTC).
   - type: cron
     name: efi-cobrar-assinaturas
     runtime: node
